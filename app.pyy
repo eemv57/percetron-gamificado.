@@ -1,0 +1,74 @@
+import streamlit as st
+import numpy as np
+
+st.set_page_config(page_title="Reconocedor de Patrones - Letra T", layout="wide")
+
+st.title("🔢 Tarea 2: Máquina que Reconoce Patrones (Letra T)")
+st.markdown("""
+Esta aplicación asigna puntajes a mini-imágenes binarias para determinar qué tan similares son a una letra **T**.
+Ajusta los pesos manualmente para 'entrenar' a tu máquina.
+""")
+
+# --- Base de Datos de Imágenes (Mínimo 3 T y 3 no T) ---
+imagenes = {
+    "T Clásica": np.array([[1,1,1], [0,1,0], [0,1,0]]),
+    "T Ancha": np.array([[1,1,1], [1,1,1], [0,1,0]]),
+    "T Pequeña": np.array([[0,0,0], [1,1,1], [0,1,0]]),
+    "Cruz (No T)": np.array([[0,1,0], [1,1,1], [0,1,0]]),
+    "Línea Horizontal (No T)": np.array([[1,1,1], [0,0,0], [0,0,0]]),
+    "Cuadrado (No T)": np.array([[1,1,1], [1,0,1], [1,1,1]]),
+}
+
+# --- Sidebar: Selección de Imagen ---
+st.sidebar.header("1. Selecciona una Imagen")
+nombre_img = st.sidebar.selectbox("Imagen a probar:", list(imagenes.keys()))
+img_seleccionada = imagenes[nombre_img]
+
+# --- Cuerpo Principal: Visualización y Pesos ---
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    st.subheader("Visualización del Patrón")
+    # Mostrar la matriz de la imagen
+    for fila in img_seleccionada:
+        cols = st.columns(3)
+        for i, pixel in enumerate(fila):
+            color = "⬛" if pixel == 1 else "⬜"
+            cols[i].markdown(f"<h2 style='text-align: center;'>{color}</h2>", unsafe_allow_html=True)
+    
+    st.caption("⬛ = Pixel Activo (1) | ⬜ = Pixel Apagado (0)")
+
+with col2:
+    st.subheader("Perillas de Ajuste (Pesos)")
+    st.write("Ajusta el peso para cada posición de la matriz 3x3:")
+    
+    # Crear matriz de sliders para los pesos
+    pesos = np.zeros((3, 3))
+    for i in range(3):
+        cols_pesos = st.columns(3)
+        for j in range(3):
+            pesos[i][j] = cols_pesos[j].number_input(f"W {i},{j}", min_value=-5.0, max_value=5.0, value=0.0, step=0.5)
+
+# --- Cálculo del Puntaje Total ---
+# Fórmula: y = sum(wi * xi)
+puntaje_total = np.sum(img_seleccionada * pesos)
+
+st.divider()
+
+# --- Resultado ---
+c_res1, c_res2 = st.columns(2)
+
+with c_res1:
+    st.header("Cálculo Final")
+    st.latex(r"y = \sum (w_i \cdot x_i)")
+    st.metric("Puntaje Obtenido", f"{puntaje_total:.1f}")
+
+with c_res2:
+    st.header("Veredicto")
+    threshold = st.slider("Umbral de decisión (Threshold)", 0.0, 10.0, 3.0)
+    if puntaje_total >= threshold:
+        st.success("✅ ¡Es una T!")
+    else:
+        st.error("❌ No es una T")
+
+st.info(f"Análisis: La imagen '{nombre_img}' tiene un puntaje de {puntaje_total}. Al mover las perillas, notas cómo los pixeles activos (1) multiplican el peso y suman al total.")
