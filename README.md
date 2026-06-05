@@ -1,1 +1,0 @@
-# percetron-gamificado.
